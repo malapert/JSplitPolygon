@@ -1,10 +1,24 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * Copyright (C) 2019 - Jean-Christophe Malapert.
+ *
+ * This file is part of JSplitPolygon.
+ * JSplitPolygon is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JSplitPolygon is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with JSplitPolygon.  If not, see <http://www.gnu.org/licenses/>.
  */
 package com.github.malapert.jsplitpolygon;
 
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -26,6 +40,7 @@ public class CoordinateTest {
     
     @BeforeClass
     public static void setUpClass() {
+        Configurator.setRootLevel(Level.OFF);        
     }
     
     @AfterClass
@@ -45,7 +60,6 @@ public class CoordinateTest {
      */
     @Test
     public void testGetLongitude() {
-        System.out.println("getLongitude");
         Coordinate instance = new Coordinate(12.5, -40.5);
         double expResult = 12.5;
         double result = instance.getLongitude();
@@ -57,26 +71,10 @@ public class CoordinateTest {
      */
     @Test
     public void testGetLatitude() {
-        System.out.println("getLatitude");
         Coordinate instance = new Coordinate(12.5, -40.5);
         double expResult = -40.5;
         double result = instance.getLatitude();
         assertEquals(expResult, result, 1e-10);
-    }
-
-    /**
-     * Test of toString method, of class Coordinate.
-     */
-    @Test
-    @Ignore("TO DO")
-    public void testToString() {
-        System.out.println("toString");
-        Coordinate instance = null;
-        String expResult = "";
-        String result = instance.toString();
-        assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
     }
     
 }

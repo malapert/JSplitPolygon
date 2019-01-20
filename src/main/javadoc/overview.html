@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>SplitPolygon library for JAVA</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body>
+        JSplitPolygon is a JAVA library designed to split a polygon into two polygons when the polygon
+        crosses the antimeridian. 
+        <br/>
+        <img src="doc-files/geojsonio.png" alt="example" width="300" height="150"/>
+        <br/>
+        In the <a href="https://tools.ietf.org/html/rfc7946">GeoJson requirement</a>, the polygon must be
+        cut when it crosses the antimeridian:
+        <i>In representing Features that cross the antimeridian, interoperability is improved by modifying 
+            their geometry.  Any geometry that crosses the antimeridian SHOULD be represented by cutting it 
+            in two such that neither part's representation crosses the antimeridian.</i>
+        <br/>
+        A rectangle extending from 40 degrees N, 170 degrees E across the antimeridian to 50 degrees N, 
+        170 degrees W should be cut in two and represented as a MultiPolygon.
+        <br/>
+        <pre>
+   {
+       "type": "MultiPolygon",
+       "coordinates": [
+           [
+               [
+                   [180.0, 40.0], [180.0, 50.0], [170.0, 50.0],
+                   [170.0, 40.0], [180.0, 40.0]
+               ]
+           ],
+           [
+               [
+                   [-170.0, 40.0], [-170.0, 50.0], [-180.0, 50.0],
+                   [-180.0, 40.0], [-170.0, 40.0]
+               ]
+           ]
+       ]
+   }    
+        </pre>   
+        <p>
+            In addition to the library, JSplitPolygon provides a command line utility:
+            <br/>
+        <pre>
+
+------------ Help for JSplitPolygon -----------
+
+Usage: java -jar JSplitPolygon.jar -i <fileInput> [OPTIONS]
+
+
+with OPTIONS:
+  -h|--help                    : This output
+  -i|--input <filepath>        : input file
+  -o|--output <filepath>       : Loads the configuation file
+  -l|--level <level>           : debug level : OFF, INFO, DEBUG, TRACE
+  -v|--version                 : version
+ 
+        </pre>
+
+</body>
+</html>

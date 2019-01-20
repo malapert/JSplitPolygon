@@ -1,19 +1,34 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * Copyright (C) 2019 - Jean-Christophe Malapert.
+ *
+ * This file is part of JSplitPolygon.
+ * JSplitPolygon is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JSplitPolygon is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with JSplitPolygon.  If not, see <http://www.gnu.org/licenses/>.
  */
 package com.github.malapert.jsplitpolygon;
 
 import com.github.malapert.jsplitpolygon.geojson.GeoJson;
 import java.io.BufferedReader;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Scanner;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -34,6 +49,7 @@ public class PolygonTest {
 
     @BeforeClass
     public static void setUpClass() {
+        Configurator.setRootLevel(Level.OFF);
     }
 
     @AfterClass
@@ -52,7 +68,7 @@ public class PolygonTest {
         List<Coordinate> coordinates = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new InputStreamReader(is, Charset.
                 defaultCharset()))) {
-            String line = null;
+            String line;
             while ((line = br.readLine()) != null) {
                 String[] values = line.split(" ");
                 coordinates.add(new Coordinate(Double.parseDouble(values[0]),
@@ -65,27 +81,54 @@ public class PolygonTest {
     @Test
     public void testPolygons() throws IOException {
         for (int i = 0; i <= 17; i++) {
-            InputStream is = PolygonTest.class.getResourceAsStream("/test" + i + ".data");
-            List<Coordinate> coords = parseCoordinates(is);
-            Polygon polygon = new Polygon(coords);
-            final boolean isSplitted = polygon.split();
-            final GeoJson geojson;
-            if (isSplitted) {
-                Polygon[] polygons = polygon.getPolygons();
-                geojson = new MultiPolygons(polygons);
-            } else {
-                geojson = polygon;
+            try (InputStream is = PolygonTest.class.getResourceAsStream("/test" + i + ".data")) {
+                List<Coordinate> coords = parseCoordinates(is);
+                Polygon polygon = new Polygon(coords);
+                final boolean isSplitted = polygon.split();
+                final GeoJson geojson;
+                if (isSplitted) {
+                    Polygon[] polygons = polygon.getPolygons();
+                    geojson = new MultiPolygons(polygons);
+                } else {
+                    geojson = polygon;
+                }
             }
         }
         assertTrue(true);
     }
 
+    @Test
+    public void testPolygonsWithRef() throws IOException {
+        boolean result = true;
+        for (int i = 0; i <= 17; i++) {
+            InputStream is_expected;
+            try (InputStream is = PolygonTest.class.getResourceAsStream("/test" + i + ".data")) {
+                is_expected = PolygonTest.class.getResourceAsStream(
+                        "/test" + i + "_result.data");
+                Scanner s = new Scanner(is_expected).useDelimiter("\\A");
+                String result_txt = s.hasNext() ? s.next() : "";
+                List<Coordinate> coords = parseCoordinates(is);
+                Polygon polygon = new Polygon(coords);
+                final boolean isSplitted = polygon.split();
+                final GeoJson geojson;
+                if (isSplitted) {
+                    Polygon[] polygons = polygon.getPolygons();
+                    geojson = new MultiPolygons(polygons);
+                } else {
+                    geojson = polygon;
+                }   result = result && geojson.toGeoJson().equals(result_txt);
+            }
+            is_expected.close();
+        }
+        assertTrue(result);
+    }
+
     /**
      * Test of isClockwisedPolygon method, of class Polygon.
+     * @throws java.io.IOException
      */
     @Test
     public void testIsClockwisedPolygon() throws IOException {
-        System.out.println("isClockwisedPolygon");
         InputStream is = PolygonTest.class.getResourceAsStream("/test0.data");
         List<Coordinate> vertices = parseCoordinates(is);
         boolean expResult = false;
@@ -95,12 +138,12 @@ public class PolygonTest {
 
     /**
      * Test of split method, of class Polygon.
+     * @throws java.io.IOException
      */
     @Test
     public void testSplit() throws IOException {
-        System.out.println("split");
         InputStream is = PolygonTest.class.getResourceAsStream("/test0.data");
-        List<Coordinate> vertices = parseCoordinates(is);        
+        List<Coordinate> vertices = parseCoordinates(is);
         Polygon instance = new Polygon(vertices);
         boolean expResult = true;
         boolean result = instance.split();
@@ -109,14 +152,14 @@ public class PolygonTest {
 
     /**
      * Test of isCut method, of class Polygon.
+     * @throws java.io.IOException
      */
     @Test
     public void testIsCut() throws IOException {
-        System.out.println("isCut");
         InputStream is = PolygonTest.class.getResourceAsStream("/test0.data");
-        List<Coordinate> vertices = parseCoordinates(is);        
+        List<Coordinate> vertices = parseCoordinates(is);
         Polygon instance = new Polygon(vertices);
-        instance.split();        
+        instance.split();
         boolean expResult = true;
         boolean result = instance.isCut();
         assertEquals(expResult, result);
@@ -124,73 +167,35 @@ public class PolygonTest {
 
     /**
      * Test of getPolygons method, of class Polygon.
+     * @throws java.io.IOException
      */
     @Test
     public void testGetPolygons() throws IOException {
-        System.out.println("getPolygons");
         InputStream is = PolygonTest.class.getResourceAsStream("/test0.data");
-        List<Coordinate> vertices = parseCoordinates(is);        
+        List<Coordinate> vertices = parseCoordinates(is);
         Polygon instance = new Polygon(vertices);
-        instance.split();         
+        instance.split();
         int expResult = 2;
         Polygon[] result = instance.getPolygons();
         assertTrue(expResult == result.length);
     }
 
-//    /**
-//     * Test of getCoordinates method, of class Polygon.
-//     */
-//    @Test
-//    public void testGetCoordinates() {
-//        System.out.println("getCoordinates");
-//        Polygon instance = null;
-//        List<Coordinate> expResult = null;
-//        List<Coordinate> result = instance.getCoordinates();
-//        assertEquals(expResult, result);
-//        // TODO review the generated test code and remove the default call to fail.
-//        fail("The test case is a prototype.");
-//    }
-//
-//    /**
-//     * Test of toString method, of class Polygon.
-//     */
-//    @Test
-//    public void testToString() {
-//        System.out.println("toString");
-//        Polygon instance = null;
-//        String expResult = "";
-//        String result = instance.toString();
-//        assertEquals(expResult, result);
-//        // TODO review the generated test code and remove the default call to fail.
-//        fail("The test case is a prototype.");
-//    }
-//
-//    /**
-//     * Test of toGeoJson method, of class Polygon.
-//     */
-//    @Test
-//    public void testToGeoJson_0args() {
-//        System.out.println("toGeoJson");
-//        Polygon instance = null;
-//        String expResult = "";
-//        String result = instance.toGeoJson();
-//        assertEquals(expResult, result);
-//        // TODO review the generated test code and remove the default call to fail.
-//        fail("The test case is a prototype.");
-//    }
-//
-//    /**
-//     * Test of toGeoJson method, of class Polygon.
-//     */
-//    @Test
-//    public void testToGeoJson_int() {
-//        System.out.println("toGeoJson");
-//        int indent = 0;
-//        Polygon instance = null;
-//        String expResult = "";
-//        String result = instance.toGeoJson(indent);
-//        assertEquals(expResult, result);
-//        // TODO review the generated test code and remove the default call to fail.
-//        fail("The test case is a prototype.");
-//    }
+    /**
+     * Test of getCoordinates method, of class Polygon.
+     */
+    @Test
+    public void testGetCoordinates() {
+        List<Coordinate> coord = Arrays.asList(
+                new Coordinate(0, 0),
+                new Coordinate(10, 0),
+                new Coordinate(10, 10),
+                new Coordinate(0, 10),
+                new Coordinate(0, 0)
+        );
+        Polygon instance = new Polygon(coord);
+        List<Coordinate> expResult = coord;
+        List<Coordinate> result = instance.getCoordinates();
+        assertEquals(expResult, result);
+    }
+
 }
