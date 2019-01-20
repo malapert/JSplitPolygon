@@ -1,7 +1,7 @@
 # JSplitPolygon
 
 A JAVA library that cuts a polygon in two polygons when the polygon crosses the anti-meridian line.
-Click here for [more information](src/main/javadoc.overview.html)
+Click here for [more information](src/main/javadoc/overview.html)
 
 ## Getting Started
 
