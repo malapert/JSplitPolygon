@@ -1,0 +1,6 @@
+com/github/malapert/jsplitpolygon/JSplitPolygon.class
+com/github/malapert/jsplitpolygon/geojson/GeoJson.class
+com/github/malapert/jsplitpolygon/Coordinate.class
+com/github/malapert/jsplitpolygon/MultiPolygons.class
+com/github/malapert/jsplitpolygon/geojson/GeoJsonFactory.class
+com/github/malapert/jsplitpolygon/Polygon.class
