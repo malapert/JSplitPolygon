@@ -47,29 +47,23 @@ public class Polygon implements GeoJson {
     private static final double HALF_LONGITUDE = 180;
 
     /**
-     * points in polygon.
+     * points in firstPolygon.
      */
     private final List<Coordinate> coordinates;
+    
+    //polygons
+    private Polygon[] polygons;
 
     /**
-     * First polygon.
-     */
-    private final List<Coordinate> tab1 = new ArrayList<Coordinate>();
-    /**
-     * Second polygon if it must be cut.
-     */
-    private final List<Coordinate> tab2 = new ArrayList<Coordinate>();
-
-    /**
-     * Creates a polygon based on a polygon.
-     * @param polygon polygon
+     * Creates a firstPolygon based on a firstPolygon.
+     * @param polygon firstPolygon
      */
     public Polygon(final Polygon polygon) {
         this(polygon.getCoordinates());
     }
 
     /**
-     * Creates a polygon based on a list of points.
+     * Creates a firstPolygon based on a list of points.
      * @param coordinates points
      */
     public Polygon(final List<Coordinate> coordinates) {
@@ -83,10 +77,10 @@ public class Polygon implements GeoJson {
     }
 
     /**
-     * Test whether the polygon is clockwise.
+     * Test whether the firstPolygon is clockwise.
      *
      * @param vertices vertices
-     * @return True when the polygon is clockwise other False
+     * @return True when the firstPolygon is clockwise other False
      */
     public static boolean isClockwisedPolygon(final List<Coordinate> vertices) {
         LOG.traceEntry("Parameters - vertices : {}", vertices);
@@ -105,42 +99,74 @@ public class Polygon implements GeoJson {
         boolean isSplitted = false;
         List<Integer> indexAntiMeridian = new ArrayList<Integer>();
         if (isPassAntiMeridian(indexAntiMeridian)) {
-            LOG.debug("polygon crosses the antimeridian");
-            List<Coordinate> ptsAntiMeridian = cut(indexAntiMeridian);
             
-            LOG.debug("creates the first polygon");
-            LOG.debug(" add points from index : 0 --> {}", indexAntiMeridian.get(0));
-            tab1.addAll(this.coordinates.subList(0, indexAntiMeridian.get(0)));
-            LOG.debug(" add first intersection with antiMeridian");
-            tab1.add(ptsAntiMeridian.get(0));
-            Coordinate pt = new Coordinate(ptsAntiMeridian.get(0).getLongitude(), 
-                    ptsAntiMeridian.get(1).getLatitude());
-            LOG.debug(" add seconde intersection with antiMeridian");
-            tab1.add(pt);
-            LOG.debug(" add points from index : {} --> {}", indexAntiMeridian.get(1), this.coordinates.size() - 1);
-            tab1.addAll(this.coordinates.subList(indexAntiMeridian.get(1), this.coordinates.size() - 1));
-
-            LOG.debug("creates the second polygon");
-            Coordinate meridian0 = new Coordinate(ptsAntiMeridian.get(0).getLongitude() * -1,
-                    ptsAntiMeridian.get(0).getLatitude());
-            Coordinate meridian1 = new Coordinate(ptsAntiMeridian.get(1).getLongitude(),
-                    ptsAntiMeridian.get(1).getLatitude());
-            LOG.debug(" add first intersection with antiMeridian");
-            tab2.add(meridian0);
-            LOG.debug(" add points from index : {} --> {}", indexAntiMeridian.get(0), indexAntiMeridian.get(1));
-            tab2.addAll(this.coordinates.subList(indexAntiMeridian.get(0), indexAntiMeridian.get(1)));
-            LOG.debug(" add first intersection with antiMeridian");
-            tab2.add(meridian1);
-
+            LOG.debug("polygon crosses the antimeridian");
+            LOG.debug("indexAntiMeridian from coord : {}", indexAntiMeridian);
+            List<Coordinate> ptsAntiMeridian = cut(indexAntiMeridian);
+            LOG.debug("Computed antiMeridian pts : {}", ptsAntiMeridian);
+            this.polygons = createPolygons(indexAntiMeridian, ptsAntiMeridian);
             isSplitted = true;
         }
 
         return LOG.traceExit(isSplitted);
     }
+    
+    private Polygon[] createPolygons(final List<Integer> indexAntiMeridian, final List<Coordinate> ptsAntiMeridian) { 
+        LOG.traceEntry("Parameters - indexAntiMeridian: {}   ptsAntiMeridian: {}", indexAntiMeridian, ptsAntiMeridian);
+        final int numberPolygons = indexAntiMeridian.size()/2+1;        
+        LOG.info("number of polygons to create: {}", numberPolygons);
+        final Polygon[] polygons = new Polygon[numberPolygons];
+        final List<Coordinate> otherPolygon = new ArrayList<Coordinate>();
+        final List<Coordinate> firstPolygon = new ArrayList<Coordinate>();
+        
+        Coordinate meridian1;
+        Coordinate meridian2;        
+        int indexPolygon = 1;
+        
+        // save the first points until the last point before the meridian
+        firstPolygon.addAll(this.coordinates.subList(0, indexAntiMeridian.get(0)));
+
+        // iter on indexes from coordinates. The index is just after the meridian.
+        for (int i = 1 ; i < indexAntiMeridian.size() - 1; i++) {            
+            // the two meridians
+            meridian1 = ptsAntiMeridian.get(i-1);
+            meridian2 = ptsAntiMeridian.get(i);
+            
+            // save the two meridians
+            firstPolygon.add(meridian1);
+            firstPolygon.add(new Coordinate(meridian2.getLongitude() * -1, meridian2.getLatitude()));
+            
+            // save the points from the point just after the second meridian to the pts just before the next meridian
+            firstPolygon.addAll(this.coordinates.subList(indexAntiMeridian.get(i), indexAntiMeridian.get(i+1)));   
+
+            // create other polygon
+            otherPolygon.clear();
+            otherPolygon.add(new Coordinate(meridian1.getLongitude() * -1, meridian1.getLatitude()));        
+            otherPolygon.addAll(this.coordinates.subList(indexAntiMeridian.get(i-1), indexAntiMeridian.get(i)));
+            otherPolygon.add(meridian2);
+            
+            // save the other polygon
+            polygons[indexPolygon++] = new Polygon(otherPolygon);
+        }
+        meridian1 = ptsAntiMeridian.get(ptsAntiMeridian.size()-2);
+        meridian2 = ptsAntiMeridian.get(ptsAntiMeridian.size()-1);
+        
+        firstPolygon.add(meridian1);
+        firstPolygon.add(new Coordinate(meridian2.getLongitude() * -1, meridian2.getLatitude()));
+        firstPolygon.addAll(this.coordinates.subList(indexAntiMeridian.get(indexAntiMeridian.size()-1), this.coordinates.size() - 1));         
+        
+        otherPolygon.clear();        
+        otherPolygon.add(new Coordinate(meridian1.getLongitude() * -1, meridian1.getLatitude()));        
+        otherPolygon.addAll(this.coordinates.subList(indexAntiMeridian.get(indexAntiMeridian.size()-2), indexAntiMeridian.get(indexAntiMeridian.size()-1)));
+        otherPolygon.add(meridian2);
+        polygons[indexPolygon++] = new Polygon(otherPolygon);
+        polygons[0] = new Polygon(firstPolygon);
+        return LOG.traceExit(polygons);
+    }
 
     /**
-     * Tests if the polygon crosses the anti-meridian.
-     * @param indexAntiMeridian indexes for which the polygon crosses the anti-meridian
+     * Tests if the firstPolygon crosses the anti-meridian.
+     * @param indexAntiMeridian indexes for which the firstPolygon crosses the anti-meridian
      * @return 
      */
     private boolean isPassAntiMeridian(final List<Integer> indexAntiMeridian) {
@@ -172,13 +198,13 @@ public class Polygon implements GeoJson {
     }
 
     /**
-     * Computes polygon from the anti-meridian indexes
+     * Computes firstPolygon from the anti-meridian indexes
      * @param indexAntiMeridian anti-meridian idexes
-     * @return polygon represented by a list of points
+     * @return firstPolygon represented by a list of points
      */
     private List<Coordinate> cut(List<Integer> indexAntiMeridian) {
         LOG.traceEntry("Parameter - indexAntiMeridian : {}", indexAntiMeridian);
-        List<Coordinate> ptsAntiMeridian = new ArrayList<Coordinate>(2);
+        List<Coordinate> ptsAntiMeridian = new ArrayList<Coordinate>();
         for (Integer index : indexAntiMeridian) {
             Coordinate[] antiMeridian = extractCoordinateForAntiMeridian(index);
             Double[] equation = computeLinearRegression(antiMeridian[0], antiMeridian[1]);
@@ -189,7 +215,7 @@ public class Polygon implements GeoJson {
     }
 
     /**
-     * Computes intersection between polygon and anti-meridian.
+     * Computes intersection between firstPolygon and anti-meridian.
      * @param equation coefficient of the linear equation between the two points that cross the
      * anti-meridian
      * @return the intersection coordinate
@@ -204,8 +230,8 @@ public class Polygon implements GeoJson {
     }
 
     /**
-     * Extracts coordinate from an index.
-     * @param index index to extract
+     * Extracts coordinate from an indexPolygon.
+     * @param index indexPolygon to extract
      * @return coordinate
      */
     private Coordinate[] extractCoordinateForAntiMeridian(int index) {
@@ -260,37 +286,26 @@ public class Polygon implements GeoJson {
     }
 
     /**
-     * Tests if the polygon is cut.
-     * @return True when the polygon is cut otherwise False
+     * Tests if the firstPolygon is cut.
+     * @return True when the firstPolygon is cut otherwise False
      */
     public boolean isCut() {
         LOG.traceEntry();
-        return LOG.traceExit(!this.tab2.isEmpty());
+        return LOG.traceExit(this.polygons.length > 1);
     }
 
     /**
-     * Returns the polygon(s).
-     * @return the polygon(s)
+     * Returns the firstPolygon(s).
+     * @return the firstPolygon(s)
      */
     public Polygon[] getPolygons() {
         LOG.traceEntry();
-        final Polygon[] polygons;
-        if (isCut()) {
-            polygons = new Polygon[]{
-                new Polygon(tab1),
-                new Polygon(tab2)
-            };
-        } else {
-            polygons = new Polygon[]{
-                new Polygon(coordinates)
-            };
-        }
-        return LOG.traceExit(polygons);
+        return LOG.traceExit(this.polygons);
     }
 
     /**
-     * Returns the coordinates of the polygon to cut.
-     * @return the coordinates of the polygon to cut
+     * Returns the coordinates of the firstPolygon to cut.
+     * @return the coordinates of the firstPolygon to cut
      */
     public List<Coordinate> getCoordinates() {
         LOG.traceEntry();

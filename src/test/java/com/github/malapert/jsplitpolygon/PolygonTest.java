@@ -116,7 +116,8 @@ public class PolygonTest {
                     geojson = new MultiPolygons(polygons);
                 } else {
                     geojson = polygon;
-                }   result = result && geojson.toGeoJson().equals(result_txt);
+                }   
+                result = result && geojson.toGeoJson().equals(result_txt);
             }
             is_expected.close();
         }
