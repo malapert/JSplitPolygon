@@ -52,7 +52,7 @@ public class JSplitPolygon {
 
     private static final String COPYRIGHT = "Copyright (C) 2019 - Jean-Christophe Malapert";
 
-    private static final String VERSION = "1.0";
+    private static final String VERSION = "1.0.1";
 
     /**
      * Displays version.
@@ -171,7 +171,7 @@ public class JSplitPolygon {
             final boolean isSplitted = polygon.split();
             final GeoJson geojson;
             if (isSplitted) {
-                Polygon[] polygons = polygon.getPolygons();
+                List<Polygon> polygons = polygon.getPolygons();
                 geojson = new MultiPolygons(polygons);
             } else {
                 geojson = polygon;

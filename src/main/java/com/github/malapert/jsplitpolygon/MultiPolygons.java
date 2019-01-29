@@ -47,6 +47,13 @@ public class MultiPolygons implements GeoJson {
     public MultiPolygons(final Polygon[] polygons) {
         this.polygons = Arrays.copyOf(polygons, polygons.length);
     }
+    
+    public MultiPolygons(final List<Polygon> polygons) {
+        this.polygons = new Polygon[polygons.size()];
+        for (int i=0; i < polygons.size(); i++) {
+            this.polygons[i] = polygons.get(i);
+        }
+    }    
 
     /**
      * Builds GeoJSon.

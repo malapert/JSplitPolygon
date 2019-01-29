@@ -87,7 +87,7 @@ public class PolygonTest {
                 final boolean isSplitted = polygon.split();
                 final GeoJson geojson;
                 if (isSplitted) {
-                    Polygon[] polygons = polygon.getPolygons();
+                    List<Polygon> polygons = polygon.getPolygons();
                     geojson = new MultiPolygons(polygons);
                 } else {
                     geojson = polygon;
@@ -100,8 +100,9 @@ public class PolygonTest {
     @Test
     public void testPolygonsWithRef() throws IOException {
         boolean result = true;
-        for (int i = 0; i <= 17; i++) {
+        for (int i = 0; i <= 19; i++) {
             InputStream is_expected;
+            
             try (InputStream is = PolygonTest.class.getResourceAsStream("/test" + i + ".data")) {
                 is_expected = PolygonTest.class.getResourceAsStream(
                         "/test" + i + "_result.data");
@@ -112,7 +113,7 @@ public class PolygonTest {
                 final boolean isSplitted = polygon.split();
                 final GeoJson geojson;
                 if (isSplitted) {
-                    Polygon[] polygons = polygon.getPolygons();
+                    List<Polygon> polygons = polygon.getPolygons();
                     geojson = new MultiPolygons(polygons);
                 } else {
                     geojson = polygon;
@@ -177,8 +178,8 @@ public class PolygonTest {
         Polygon instance = new Polygon(vertices);
         instance.split();
         int expResult = 2;
-        Polygon[] result = instance.getPolygons();
-        assertTrue(expResult == result.length);
+        List<Polygon> result = instance.getPolygons();
+        assertTrue(expResult == result.size());
     }
 
     /**
